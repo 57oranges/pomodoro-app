@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline';">
+  <title>🍅 番茄钟</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+
+    <!-- 标题栏 -->
+    <header class="app-header">
+      <h1 class="app-title">🍅 番茄钟</h1>
+      <button id="btn-settings" class="btn-icon" title="设置">⚙️</button>
+    </header>
+
+    <!-- 计时器区域 -->
+    <section class="timer-section">
+      <!-- 模式标签 -->
+      <div class="mode-tabs">
+        <button class="mode-tab active" data-mode="focus">专注</button>
+        <button class="mode-tab" data-mode="shortBreak">短休息</button>
+        <button class="mode-tab" data-mode="longBreak">长休息</button>
+      </div>
+
+      <!-- 进度环 + 倒计时 -->
+      <div class="timer-display">
+        <svg class="progress-ring" viewBox="0 0 200 200">
+          <defs>
+            <linearGradient id="ring-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#00d4ff" />
+              <stop offset="100%" stop-color="#00ff88" />
+            </linearGradient>
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="3" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+          <circle class="ring-bg" cx="100" cy="100" r="85" />
+          <circle class="ring-progress" id="ring-progress" cx="100" cy="100" r="85"
+                  stroke-dasharray="534.07" stroke-dashoffset="0" />
+        </svg>
+        <div class="timer-text">
+          <span id="timer-minutes" class="timer-minutes">25</span>
+          <span class="timer-colon">:</span>
+          <span id="timer-seconds" class="timer-seconds">00</span>
+        </div>
+        <div class="cycle-indicator" id="cycle-indicator">第 1 轮</div>
+      </div>
+
+      <!-- 控制按钮 -->
+      <div class="controls">
+        <button id="btn-start" class="btn-primary">开始</button>
+        <button id="btn-skip" class="btn-secondary">跳过</button>
+        <button id="btn-reset" class="btn-ghost">重置</button>
+      </div>
+
+      <!-- 当前任务指示 -->
+      <div class="active-task" id="active-task-display">
+        <span class="active-task-label">当前任务：</span>
+        <span class="active-task-name" id="active-task-name">无</span>
+      </div>
+    </section>
+
+    <!-- 折叠面板区 -->
+    <section class="panels">
+      <!-- 任务列表面板 -->
+      <details class="panel" id="task-panel">
+        <summary class="panel-header">
+          <span>📋 任务列表</span>
+          <span class="panel-badge" id="task-count">0</span>
+        </summary>
+        <div class="panel-body">
+          <div class="task-input-row">
+            <input type="text" id="task-input" class="task-input" placeholder="添加新任务..." maxlength="100">
+            <button id="btn-add-task" class="btn-small">添加</button>
+          </div>
+          <ul class="task-list" id="task-list">
+            <!-- 动态填充 -->
+          </ul>
+          <div class="task-empty" id="task-empty">暂无任务，添加一个吧 ✨</div>
+        </div>
+      </details>
+
+      <!-- 统计面板 -->
+      <details class="panel" id="stats-panel">
+        <summary class="panel-header">
+          <span>📊 统计</span>
+        </summary>
+        <div class="panel-body">
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-value" id="stat-today">0</div>
+              <div class="stat-label">今日番茄</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="stat-week">0</div>
+              <div class="stat-label">本周番茄</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="stat-total">0</div>
+              <div class="stat-label">累计番茄</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="stat-hours">0h</div>
+              <div class="stat-label">累计专注</div>
+            </div>
+          </div>
+          <div class="chart-container">
+            <div class="chart-title">近 7 天趋势</div>
+            <div class="chart" id="weekly-chart">
+              <!-- CSS 柱状图 -->
+            </div>
+          </div>
+        </div>
+      </details>
+    </section>
+
+    <!-- 静音按钮 -->
+    <footer class="app-footer">
+      <button id="btn-mute" class="btn-icon" title="静音">🔊</button>
+      <span class="footer-version">v1.0.0</span>
+    </footer>
+  </div>
+
+  <!-- 设置弹窗 -->
+  <div class="modal-overlay" id="settings-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>⚙️ 设置</h2>
+        <button class="btn-close" id="btn-close-settings">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="setting-row">
+          <label class="setting-label">专注时长（分钟）</label>
+          <input type="number" id="setting-focus" class="setting-input" min="1" max="120" value="25">
+        </div>
+        <div class="setting-row">
+          <label class="setting-label">短休息时长（分钟）</label>
+          <input type="number" id="setting-short-break" class="setting-input" min="1" max="30" value="5">
+        </div>
+        <div class="setting-row">
+          <label class="setting-label">长休息时长（分钟）</label>
+          <input type="number" id="setting-long-break" class="setting-input" min="1" max="60" value="15">
+        </div>
+        <div class="setting-row">
+          <label class="setting-label">长休息间隔（轮）</label>
+          <input type="number" id="setting-interval" class="setting-input" min="1" max="10" value="4">
+        </div>
+        <button id="btn-save-settings" class="btn-primary" style="width:100%;margin-top:12px;">保存设置</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
